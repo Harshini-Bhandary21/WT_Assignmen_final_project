@@ -72,6 +72,14 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/thoughts', thoughtRoutes);
 app.use('/api', extraRoutes);
 
+// Production: serve the built React app from the same service
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const dist = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(dist));
+  app.get(/^\/(?!api|socket\.io).*/, (req, res) => res.sendFile(path.join(dist, 'index.html')));
+}
+
 // Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);
