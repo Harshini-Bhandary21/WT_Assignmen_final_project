@@ -40,6 +40,7 @@ router.post('/payments/create-order', async (req, res) => {
     intent: 'CAPTURE',
     purchase_units: [{ description: 'LevelUp Premium', amount: { currency_code: 'USD', value: PRICE } }]
   });
+  if (!o.id) return res.status(502).json({ success: false, message: o.message || 'PayPal order failed', details: o });
   res.json({ id: o.id });
 });
 
@@ -102,14 +103,15 @@ router.post('/coach', async (req, res) => {
   if (process.env.GEMINI_API_KEY) {
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: 'You are LevelUp Coach, a concise, encouraging personal-growth and English-communication coach. Answer ONLY using the numbered context about this user when it is relevant; cite sources like [1]. Keep it under 120 words.' }] },
+      generationConfig: { maxOutputTokens: 350, thinkingConfig: { thinkingLevel: 'minimal' } },
       contents: [{ role: 'user', parts: [{ text: `Context:\n${context}\n\nQuestion: ${q}` }] }]
     });
     // Try the configured model, then fall back if it is overloaded/unavailable
-    const models = [...new Set([process.env.GEMINI_MODEL, 'gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'].filter(Boolean))];
+    const models = [...new Set([process.env.COACH_MODEL, 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'].filter(Boolean))];
     for (const m of models) {
       try {
         const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-          method: 'POST', body, signal: AbortSignal.timeout(20000),
+          method: 'POST', body, signal: AbortSignal.timeout(10000),
           headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY, 'content-type': 'application/json' }
         });
         const j = await r.json();

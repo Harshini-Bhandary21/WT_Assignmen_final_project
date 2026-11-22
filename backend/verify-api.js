@@ -64,8 +64,8 @@ const runTests = async () => {
     // 2. Demo login
     console.log('[2/12] Testing Demo Login: POST /api/auth/login');
     const login = await testEndpoint('POST', '/api/auth/login', {
-      email: 'demo@levelup.com',
-      password: 'Password123!'
+      email: 'demo@levelup.app',
+      password: 'LevelUp@2026'
     });
     let token = null;
     if (login.status === 200 && login.body.token) {

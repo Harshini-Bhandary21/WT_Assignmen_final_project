@@ -50,8 +50,8 @@ const Login = () => {
   };
 
   const handleFillDemo = () => {
-    setEmail('demo@levelup.com');
-    setPassword('Password123!');
+    setEmail('demo@levelup.app');
+    setPassword('LevelUp@2026');
     setError('');
   };
 

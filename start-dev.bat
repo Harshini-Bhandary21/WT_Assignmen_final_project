@@ -17,7 +17,7 @@ echo Frontend: http://localhost:5173
 echo Backend:  http://localhost:5000
 echo.
 echo Demo Credentials:
-echo Email:    demo@levelup.com
-echo Password: Password123!
+echo Email:    demo@levelup.app
+echo Password: LevelUp@2026
 echo.
 pause

@@ -837,13 +837,13 @@ const seedDatabase = async () => {
     console.log(`[Seed] Seeded ${insertedAchievements.length} achievements.`);
 
     // Seed Demo User if not exists
-    const demoEmail = 'demo@levelup.com';
+    const demoEmail = 'demo@levelup.app';
     let demoUser = await User.findOne({ email: demoEmail });
 
     if (!demoUser) {
       console.log('[Seed] Creating demo user account...');
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('Password123!', salt);
+      const hashedPassword = await bcrypt.hash('LevelUp@2026', salt);
 
       // Create realistic demo user with 7-day streak and 450 XP (Explorer level)
       const today = new Date().toISOString().split('T')[0];
@@ -993,8 +993,8 @@ const seedDatabase = async () => {
       console.log('[Seed] Demo user and realistic history seeded successfully!');
       console.log('----------------------------------------------------');
       console.log('DEMO CREDENTIALS:');
-      console.log('Email:    demo@levelup.com');
-      console.log('Password: Password123!');
+      console.log('Email:    demo@levelup.app');
+      console.log('Password: LevelUp@2026');
       console.log('----------------------------------------------------');
     } else {
       console.log('[Seed] Demo user already exists.');

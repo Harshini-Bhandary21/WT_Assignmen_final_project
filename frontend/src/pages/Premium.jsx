@@ -4,14 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Crown, Send, Sparkles, FileText } from 'lucide-react';
 
+let sdk; // load the SDK once (React StrictMode runs effects twice)
 const loadPayPal = (clientId) =>
-  new Promise((res) => {
-    if (window.paypal) return res();
+  (sdk ||= new Promise((res, rej) => {
     const s = document.createElement('script');
     s.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
     s.onload = res;
+    s.onerror = () => { sdk = null; rej(new Error('PayPal SDK failed to load')); };
     document.body.appendChild(s);
-  });
+  }));
 
 const Premium = () => {
   const { user, updateUser } = useAuth();
@@ -24,17 +25,21 @@ const Premium = () => {
   // PayPal sandbox buttons
   useEffect(() => {
     if (user?.isPremium) return;
+    let btns, dead = false;
     loadPayPal(import.meta.env.VITE_PAYPAL_CLIENT_ID).then(() => {
-      window.paypal.Buttons({
+      if (dead || !btn.current) return;
+      btns = window.paypal.Buttons({
         createOrder: async () => (await API.post('/payments/create-order')).data.id,
         onApprove: async (d) => {
           await API.post('/payments/capture-order', { orderID: d.orderID });
-          updateUser({ ...user, isPremium: true });
+          updateUser({ isPremium: true });
           showToast('Welcome to Premium! 👑', 'success');
         },
-        onError: () => showToast('Payment failed', 'error')
-      }).render(btn.current);
-    });
+        onError: (e) => showToast(e?.message || 'Payment failed', 'error')
+      });
+      btns.render(btn.current);
+    }).catch((e) => showToast(e.message, 'error'));
+    return () => { dead = true; btns?.close?.(); };
   }, [user?.isPremium]);
 
   const ask = async (e) => {

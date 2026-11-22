@@ -29,7 +29,7 @@ Write-Host "Frontend: http://localhost:5173" -ForegroundColor White
 Write-Host "Backend:  http://localhost:5000" -ForegroundColor White
 Write-Host ""
 Write-Host "Demo Credentials:" -ForegroundColor Yellow
-Write-Host "Email:    demo@levelup.com" -ForegroundColor White
-Write-Host "Password: Password123!" -ForegroundColor White
+Write-Host "Email:    demo@levelup.app" -ForegroundColor White
+Write-Host "Password: LevelUp@2026" -ForegroundColor White
 Write-Host ""
 Write-Host "Press Ctrl+C or close the windows to stop the servers." -ForegroundColor Gray

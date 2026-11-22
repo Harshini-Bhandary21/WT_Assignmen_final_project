@@ -263,8 +263,8 @@ Navigate to `http://localhost:5173` in your web browser.
 
 For quick testing and grading, a realistic account with 7-day streak history, unlocked achievements, and sample tasks is pre-seeded:
 
-* **Email:** `demo@levelup.com`
-* **Password:** `Password123!`
+* **Email:** `demo@levelup.app`
+* **Password:** `LevelUp@2026`
 
 *(You can also click the "Fill Demo" button on the Login page for 1-click credential population).*
 

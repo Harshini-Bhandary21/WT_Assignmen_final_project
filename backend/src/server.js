@@ -23,6 +23,20 @@ const app = express();
 // Connect to Database
 connectDB();
 
+// Ensure the demo account exists (creates only this one user if missing)
+require('mongoose').connection.once('open', async () => {
+  const User = require('./models/User');
+  const bcrypt = require('bcryptjs');
+  if (!(await User.exists({ email: 'demo@levelup.app' }))) {
+    await User.create({
+      name: 'Alex Mercer', email: 'demo@levelup.app',
+      password: await bcrypt.hash('LevelUp@2026', 10),
+      totalPoints: 450, level: 'Explorer', currentStreak: 7, longestStreak: 14
+    });
+    console.log('[Demo] Created demo@levelup.app');
+  }
+});
+
 // Core Middleware
 app.use(cors({
   origin: '*',
@@ -34,7 +48,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Realtime: after any successful write, push a 'sync' to the user's open tabs
 app.use('/api', (req, res, next) => {
-  if (req.method !== 'GET') res.on('finish', () => res.statusCode < 400 && req.user && realtime.notify(req.user._id));
+  if (req.method !== 'GET' && !/payments\/create-order|\/coach/.test(req.originalUrl)) res.on('finish', () => res.statusCode < 400 && req.user && realtime.notify(req.user._id));
   next();
 });
 
