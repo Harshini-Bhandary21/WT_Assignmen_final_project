@@ -13,13 +13,13 @@ const Journal = require('../models/Journal');
 router.use(protect);
 
 /* ───────── PayPal Sandbox ───────── */
-const PP = process.env.PAYPAL_BASE || 'https://api-m.sandbox.paypal.com';
+const PP = process.env.PAYPAL_ENV === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 const PRICE = process.env.PREMIUM_PRICE || '4.99';
 const ppToken = async () => {
   const r = await fetch(`${PP}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
-      Authorization: 'Basic ' + Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString('base64'),
+      Authorization: 'Basic ' + Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64'),
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     body: 'grant_type=client_credentials'
@@ -99,21 +99,27 @@ router.post('/coach', async (req, res) => {
   const context = hits.map((h, i) => `[${i + 1}] ${h.text}`).join('\n');
 
   let answer;
-  if (process.env.ANTHROPIC_API_KEY) {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: process.env.COACH_MODEL || 'claude-haiku-5-5',
-        max_tokens: 400,
-        system: 'You are LevelUp Coach, a concise, encouraging personal-growth and English-communication coach. Answer ONLY using the numbered context about this user when it is relevant; cite sources like [1]. Keep it under 120 words.',
-        messages: [{ role: 'user', content: `Context:\n${context}\n\nQuestion: ${q}` }]
-      })
+  if (process.env.GEMINI_API_KEY) {
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text: 'You are LevelUp Coach, a concise, encouraging personal-growth and English-communication coach. Answer ONLY using the numbered context about this user when it is relevant; cite sources like [1]. Keep it under 120 words.' }] },
+      contents: [{ role: 'user', parts: [{ text: `Context:\n${context}\n\nQuestion: ${q}` }] }]
     });
-    const j = await r.json();
-    answer = j.content?.[0]?.text || `LLM error: ${j.error?.message || 'unknown'}`;
+    // Try the configured model, then fall back if it is overloaded/unavailable
+    const models = [...new Set([process.env.GEMINI_MODEL, 'gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'].filter(Boolean))];
+    for (const m of models) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+          method: 'POST', body, signal: AbortSignal.timeout(20000),
+          headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY, 'content-type': 'application/json' }
+        });
+        const j = await r.json();
+        const text = j.candidates?.[0]?.content?.parts?.map((p) => p.text).join('');
+        if (text) { answer = text; break; }
+      } catch { /* timeout / network: try next model */ }
+    }
+    answer = answer || 'The AI model is busy right now — here are the most relevant items I found for you.';
   } else {
-    answer = 'ANTHROPIC_API_KEY not set — showing retrieved context only.';
+    answer = 'GEMINI_API_KEY not set — showing retrieved context only.';
   }
   res.json({ answer, sources: hits.map((h, i) => ({ n: i + 1, text: h.text, score: +h.s.toFixed(2) })) });
 });
